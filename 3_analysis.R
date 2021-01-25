@@ -1,14 +1,14 @@
 # data and charts for report
 # LOAD ========
 source("5_analysis.R")
-load("Industry/final_naics3.rda")
+load("final/final_naics3.rda")
 
 # IN REPORT =====
 # number of kids struggling
 target_struggle %>% 
   filter(str_detect(cat, "child")) %>%
   mutate(n_child = as.numeric(str_sub(cat, 9, 10))) %>%
-  # filter(!is.na(struggle_alt)) %>%
+  filter(!is.na(struggle_alt)) %>%
   group_by(struggle_alt) %>%
   summarise(
     all_kids = sum(weight * n_child, na.rm = T),
@@ -17,7 +17,7 @@ target_struggle %>%
   mutate(pct = all_fam / sum(all_fam))
 
 # TABLE ===
-load("../GitHub/metro-data-warehouse/data-raw/naics_sc.rda")
+load("../metro.data/data-raw/naics_sc.rda")
 
 naics_sc %>% 
   group_by(sector) %>% 
@@ -43,10 +43,6 @@ final_naics3 %>%
 # chart: struggling share changes as wage increases -----
 chart1 <- target_wages_semp %>%
   filter(cbsa_code == "13820") %>%
-  find_earners() %>% 
-  mutate(deficits = cumsum(n_worker*weight)) %>% 
-  select(pct_kids, deficits, expected_wage) %>% 
-  # select(-contains("latino"), -contains("black"), -contains("female")) %>%
   test_wage(0.5) +
   theme(legend.position = "none")
 
@@ -61,7 +57,7 @@ chart2 <- target_struggle %>%
 
 # map ===============
 # read in median earnings
-cbsa_median <- readxl::read_xlsx("data-raw/OES_Report.xlsx", skip = 5)
+cbsa_median <- readxl::read_xlsx("../metro-self-sufficient/data/OES_Report.xlsx", skip = 5)
 
 cbsa_data <- cbsa_median %>%
   mutate(cbsa_code = str_sub(`Area Name`, -6, -2)) %>%
@@ -130,7 +126,7 @@ chart5 <- cbsa_data %>%
 
 chart5
 
-ggplotly(chart5)
+# ggplotly(chart5)
 
 cbsa_data %>% 
   filter(cbsa_size == "very large metros") %>%
@@ -142,7 +138,7 @@ cbsa_data %>%
 
 # MAP -------------
 library(tmap)
-load("../GitHub/metro-recession/data/map.rda")
+load("../metro-recession/data/map.rda")
 cbsa_ct <- sf::st_centroid(cbsa)
 cbsa_struggle_map <- merge(cbsa_ct, cbsa_data %>% rename(GEOID = cbsa_code))
 
@@ -328,8 +324,8 @@ shorten <- tibble::tribble(
 
 
 modified_ind <- final_naics3 %>%
-  # get_industry("17460") %>%
-  get_industry("41740") %>% 
+  get_industry("17460") %>%
+  # get_industry("41740") %>% 
   filter(Jobs > 500) %>% 
   left_join(shorten) %>% 
   mutate(Industry = ifelse(is.na(Industry), `Industry Name`, Industry))
