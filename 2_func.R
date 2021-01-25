@@ -1,4 +1,6 @@
 library(tidyverse)
+load("result/stco_struggle19.rda")
+load("result/target_wage.rda")
 # ANALYSIS ============
 find_earners <- function(df){
   df %>%
@@ -167,10 +169,10 @@ test_wage <- function(df, percent) {
     # geom_segment(data = data.frame(x = c(12,wage),
     #                                xend = c(wage,wage),
     #                                y = c(percent,0),
-    #                                yend = c(percent,percent)), 
-    #              aes(x = x, xend = xend, y = y, yend = yend), 
+    #                                yend = c(percent,percent)),
+    #              aes(x = x, xend = xend, y = y, yend = yend),
     #              color = "grey", linetype = "dashed", size = 1) +
-    
+
     # scale_color_manual("Wage threshold tests",
     #                    values = c("#e41a1c", "#377eb8", "#984ea3"),
     #   labels = c("All families", "Families with kids", "Families with Black/Hispanic kids")
