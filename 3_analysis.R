@@ -1,7 +1,10 @@
 # data and charts for report
 # LOAD ========
-source("5_analysis.R")
-load("final/final_naics3.rda")
+source("2_func.R")
+load("result/final_naics3.rda")
+
+final_naics3 <- final_naics3 %>% 
+  filter(n_good_jobs > 0)
 
 # IN REPORT =====
 # number of kids struggling
@@ -17,7 +20,7 @@ target_struggle %>%
   mutate(pct = all_fam / sum(all_fam))
 
 # TABLE ===
-load("../metro.data/data-raw/naics_sc.rda")
+# load("../metro.data/data-raw/naics_sc.rda")
 
 naics_sc %>% 
   group_by(sector) %>% 
@@ -43,8 +46,9 @@ final_naics3 %>%
 # chart: struggling share changes as wage increases -----
 chart1 <- target_wages_semp %>%
   filter(cbsa_code == "13820") %>%
-  test_wage(0.5) +
-  theme(legend.position = "none")
+  select(pct_kids_fam, pct_all_fam, expected_wage) %>% 
+  # write.csv("result/wage_test.csv")
+  test_wage(0.5)
 
 library(plotly)
 ggplotly(chart1) %>%
@@ -57,7 +61,7 @@ chart2 <- target_struggle %>%
 
 # map ===============
 # read in median earnings
-cbsa_median <- readxl::read_xlsx("../metro-self-sufficient/data/OES_Report.xlsx", skip = 5)
+cbsa_median <- readxl::read_xlsx("data-raw/OES_Report.xlsx", skip = 5)
 
 cbsa_data <- cbsa_median %>%
   mutate(cbsa_code = str_sub(`Area Name`, -6, -2)) %>%
@@ -83,23 +87,23 @@ cbsa_data <- cbsa_median %>%
 
 chart5 <- cbsa_data %>% 
   mutate(point_col = case_when(
-    cbsa_code %in% c("47900","42660", "19780", "25540", "44060", "31540") ~ "high", 
-    cbsa_code %in% c("46520", "41940", "33100", "41860", "19660", "42220") ~ "low", 
+    cbsa_code %in% c("47900","42660", "25540", "44060", "31540", "40900") ~ "high", 
+    cbsa_code %in% c("46520", "41940", "33100", "41860", "19660", "42220", "37100") ~ "low", 
     T ~ "other"
   )) %>% 
   # filter(cbsa_size == "very large metros") %>%
-  ggplot(aes(x = kids, y = wage, text = `Area Name`))+
+  ggplot(aes(x = kids_fam, y = wage, text = `Area Name`))+
   geom_point(alpha = 0.5, size = 4, aes(color = point_col))+
   scale_color_manual(values = c("#33a02c","#e31a1c", "#1f78b4"), guide = F)+
   scale_x_continuous("family sustaining wage thresholds",
-                     limits = c(15,35), 
+                     limits = c(15,38), 
                      labels = scales::dollar)+
   scale_y_continuous("median wage",
-                     limits = c(15,35), 
+                     limits = c(15,38), 
                      labels = scales::dollar)+
   # diagonal line
   geom_abline(slope = 1, linetype = "dotted", color = "#1f78b4") +
-  geom_errorbarh(aes(xmax = 30.1642, xmin = 22.07, y = 22.07), 
+  geom_errorbarh(aes(xmax = 32.33446, xmin = 22.07, y = 22.07), 
                  color = "#e31a1c", 
                  # linetype = "dashed",
                  size = 1)+
@@ -179,17 +183,14 @@ map_delta <- tm_shape(st, projection = 2163) +
   NULL
 
 # chart: secure wage share by sector across large metros
-target_cbsa <- metro.data::cbsa_18 %>%
-  filter(str_detect(cbsa_size, "large")) %>%
-  pull(cbsa_code)
-
-chart3 <- final_naics3 %>%
-  filter(cbsa_code %in% target_cbsa) %>%
+final_sector <- final_naics3 %>% 
   filter(!is.na(sector)) %>%
+  group_by(cbsa_code, sector) %>% 
+  summarise(pct_good_jobs = sum(n_good_jobs)/sum(n_good_jobs/pct_good_jobs))
+
+chart3 <- final_sector %>%
   mutate(type = "sector") %>% 
-  bind_rows(final_naics3 %>%
-              filter(cbsa_code %in% target_cbsa) %>%
-              filter(!is.na(sector)) %>%
+  bind_rows(final_sector %>%
               mutate(type = "traded", 
                      sector = ifelse(str_detect(sector, "Traded"), 
                                      "Traded", "Local"))) %>% 
@@ -341,11 +342,11 @@ chart4 %>%
   layout(showlegend = F)
 
 # Export ===
-ggsave(chart1, filename = "result/chart1.png", width = 8)
-ggsave(chart2, filename = "result/chart2.png")
+ggsave(chart1, filename = "result/chart1.png", width = 8, height = 3)
+ggsave(chart2, filename = "result/chart2.pdf", height = 3)
 ggsave(chart3, filename = "result/chart3.png", height = 5)
-ggsave(chart4, filename = "result/chart4.png", width = 12, height = 5)
-ggsave(chart5, filename = "result/chart5.png", width = 6)
+ggsave(chart4, filename = "result/chart4.pdf", width = 12, height = 5)
+ggsave(chart5, filename = "result/chart5.pdf", width = 6, height = 3)
 
 tmap_save(map_struggle, "result/map1.png")
 tmap_save(map_delta, "result/map2.png")

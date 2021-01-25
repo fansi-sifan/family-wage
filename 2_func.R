@@ -33,8 +33,8 @@ get_cbsa_summary <- function(df, semp){
                 find_earners() %>% 
                 group_by(cbsa_code) %>%
                 mutate(
-                  n_kids = sum(kids * weight, na.rm = T) ,
-                  n_all = sum(n_worker * weight, na.rm = T)
+                  n_kids = sum(kids * weight, na.rm = T)/2 , # median
+                  n_all = sum(n_worker * (kids!=0) * weight, na.rm = T)/2 # median
                 ) %>%
                 filter(n_all * n_kids != 0) %>%
                 group_by(cbsa_code, n_all, n_kids) %>%
@@ -155,12 +155,12 @@ plot_struggle <- function(df, semp) {
 
 test_wage <- function(df, percent) {
   
-  wage <- target_wages_semp %>%
-    filter(cbsa_code == "13820") %>%
-    select(pct_kids_fam, expected_wage) %>% 
-    filter(pct_kids_fam >=0.5) %>%
-    slice_min(expected_wage) %>% 
-    pull(expected_wage)
+  # wage <- target_wages_semp %>%
+  #   filter(cbsa_code == "13820") %>%
+  #   select(pct_kids_fam, expected_wage) %>% 
+  #   filter(pct_kids_fam >=0.5) %>%
+  #   slice_min(expected_wage) %>% 
+  #   pull(expected_wage)
   
   df %>%
     pivot_longer(contains("pct")) %>%
@@ -173,15 +173,15 @@ test_wage <- function(df, percent) {
     #              aes(x = x, xend = xend, y = y, yend = yend),
     #              color = "grey", linetype = "dashed", size = 1) +
 
-    # scale_color_manual("Wage threshold tests",
-    #                    values = c("#e41a1c", "#377eb8", "#984ea3"),
-    #   labels = c("All families", "Families with kids", "Families with Black/Hispanic kids")
-    # ) +
+    scale_color_manual("Wage threshold tests",
+                       values = c("#e41a1c", "#377eb8"),
+      labels = c("All families", "Families with kids")
+    ) +
     scale_x_continuous(name = "Expected hourly wage",
                        limits = c(12, 40), labels = scales::dollar, n.breaks = 20) +
     scale_y_continuous(labels = scales::percent, 
                        name = "% lifted out of struggling status") +
-    labs(title = "Hourly wage required to lift 50% of families with children out of struggling status")+
+    labs(title = "Hourly wage required to lift families out of struggling status")+
     theme_classic()
 }
 
