@@ -26,7 +26,7 @@ cat_fam <- tibble::tribble(
 
 # PUMA ------------
 # GEOCORR 2018, weighted by 2010 household units
-final <- readRDS(file = "data-raw//acs2019final.rds")
+final <- readRDS(file = "data-raw/acs2019final.rds")
 
 puma_county <- metro.data::puma2county %>%
   mutate(stpuma_code = paste0(st_code, puma_code)) %>% 

@@ -94,14 +94,15 @@ subplots <- function(df, col, semp, pal) {
   semp <- rlang::enquo(semp)
   
   df %>%
-    filter(str_detect(cat, "child")) %>%
     group_by(!!semp, !!col) %>%
     summarise(n = sum(weight)) %>%
     group_by(!!col) %>%
     mutate(pct = n / sum(n)) %>%
     # filter(struggling) %>%
     filter(!!semp) %>%
-    ggplot(aes(x = reorder(!!col, pct), y = pct, label = scales::percent(pct, accuracy = 1), fill = !!col)) +
+    ggplot(aes(x = reorder(!!col, pct), y = pct, 
+               label = scales::percent(pct, accuracy = 1), 
+               fill = reorder(!!col, pct))) +
     scale_fill_brewer(palette = pal, guide = F) +
     geom_col() +
     geom_text() +
@@ -128,10 +129,11 @@ plot_struggle <- function(df, semp) {
   sex <- subplots(df, sex_cat, !!semp, "Purples")  %>% ggplotGrob()
   race <- subplots(df, race_cat, !!semp, "Blues") %>% ggplotGrob()
   edu <- subplots(df, edu_cat, !!semp, "Greens") %>% ggplotGrob()
+  # type <- subplots(df, cat, !!semp, "Oranges") %>% ggplotGrob()
   
   gridExtra::grid.arrange(grobs = list(sex, race, edu),
                           widths = c(1, 2, 2),
-                          top = "Share of families with children that are struggling by household head")
+                          top = "Percentage of households that are struggling by household head")
   
 }
 

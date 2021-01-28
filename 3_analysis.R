@@ -57,6 +57,7 @@ ggplotly(chart1) %>%
 
 # chart: struggling share by demography -----------
 chart2 <- target_struggle %>%
+  filter(str_detect(cat, "child")) %>%
   plot_struggle(struggle_alt)
 
 # map ===============
