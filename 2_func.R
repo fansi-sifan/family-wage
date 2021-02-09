@@ -133,7 +133,7 @@ plot_struggle <- function(df, semp) {
   
   gridExtra::grid.arrange(grobs = list(sex, race, edu),
                           widths = c(1, 2, 2),
-                          top = "Percentage of households that are struggling by household head")
+                          top = "Percentage of households that are struggling by characteristics of household head")
   
 }
 
