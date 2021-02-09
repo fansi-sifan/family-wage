@@ -1,9 +1,19 @@
 # $15 minimal wage
 source("2_func.R")
 
+target_struggle <- target_struggle %>% 
+  mutate(fam_cat = ifelse(str_detect(cat, "child"), "families with kids", cat)) %>% 
+  # remove college students
+  filter(!(RELP == 20 & SCH %in% c(2,3)))
+
+target_wages_semp <- target_wages_semp %>% 
+  mutate(fam_cat = ifelse(str_detect(cat, "child"), "families with kids", cat)) %>% 
+  # remove college students
+  filter(!(RELP == 20 & SCH %in% c(2,3)))
+
 # findings 1
-target_struggle %>%
-  filter(str_detect(cat, "child")) %>%
+target_struggle %>% 
+  # filter(str_detect(cat, "child")) %>%
   mutate(n_child = as.numeric(str_sub(cat, 9, 10))) %>%
   filter(!is.na(struggle_alt)) %>%
   group_by(struggle_alt) %>%
@@ -71,6 +81,57 @@ map_struggle <- tm_shape(st, projection = 2163) +
 map_struggle
 
 # findings 2
+compare_lifted <- function(col){
+  col <- enquo(col)
+  
+  bind_rows(target_wages_semp %>%
+              mutate(lifted = expected_wage <= 15) %>%
+              group_by(lifted, !!col) %>%
+              summarise(n = sum(weight)) %>%
+              group_by(lifted) %>%
+              mutate(pct = n / sum(n)) %>% 
+              filter(lifted) %>% 
+              mutate(lifted = "newly self-sufficient households at $15"),
+            
+            target_wages_semp %>% 
+              group_by(!!col) %>%
+              summarise(n = sum(weight)) %>%
+              mutate(pct = n / sum(n)) %>% 
+              mutate(lifted = "all struggling households"),
+            
+            target_struggle %>% 
+              filter(!is.na(struggle_alt)) %>% 
+              group_by(!!col) %>% 
+              summarise(n = sum(weight)) %>%
+              mutate(pct = n / sum(n)) %>% 
+              mutate(lifted = "all households")) %>% 
+    
+    ggplot(aes(x = lifted, y = pct, fill = reorder(!!col, pct)))+
+    geom_col()+
+    geom_text(aes(label = scales::percent(pct, accuracy = 1)), position = "stack", hjust = 1,check_overlap = T) +
+    scale_fill_brewer(name = "", palette = "Set3")+
+    coord_flip()+
+    scale_y_continuous(labels = scales::percent)+
+    labs(x = "", y = "")+
+    theme_classic()
+  
+}
+
+
+compare_lifted(edu_cat) 
+
+chart_2 <- compare_lifted(fam_cat)
+chart_3a <- compare_lifted(sex_cat) +
+  scale_fill_manual(values = c("#a6cee3", "#b2df8a"), name = "")
+
+chart_3b <- compare_lifted(race_cat)
+chart_4 <- compare_lifted(cbsa_size)
+
+ggsave(chart_2, filename = "result/mw_chart_2.png", height = 3)
+ggsave(chart_3a, filename = "result/mw_chart_3a.png", height = 2)
+ggsave(chart_3b, filename = "result/mw_chart_3b.png", height = 2)
+ggsave(chart_4, filename = "result/mw_chart_4.png", height = 3)
+#[depreciated] findings 2
 find_lifted <- function(df, col, ...) {
   col <- enquo(col)
 
@@ -159,6 +220,9 @@ find_15 <- function(col) {
   col <- enquo(col)
 
   target_wages_semp %>%
+    # remove college students
+    filter(!(RELP == 20 & SCH %in% c(2,3))) %>%
+    
     filter(expected_wage <= 15) %>%
     group_by(!!col) %>%
     summarise(n = sum(weight)) %>%
@@ -166,17 +230,15 @@ find_15 <- function(col) {
     rename(type = !!col)
 }
 
-
-df <- bind_rows(
-  find_15(sex_cat),
-  find_15(race_cat),
-  find_15(edu_cat),
-  find_15(cat)
-)
+find_15(sex_cat)
+find_15(race_cat)
+find_15(edu_cat)
+find_15(cat)
 
 
 ggsave(chart1, filename = "result/mw_chart1.pdf",height = 3)
 tmap_save(map_struggle, "result/mw_map1.pdf")
+
 ggsave(chart2, filename = "result/mw_chart2.pdf", height = 3)
 ggsave(chart3, filename = "result/mw_chart3.pdf", height = 3)
 ggsave(chart4, filename = "result/mw_chart4.pdf", height = 3)
