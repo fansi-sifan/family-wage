@@ -2,8 +2,8 @@ library(tidyverse)
 library(tidylog)
 
 # SETUP ================
-target_cbsa <- metro.data::cbsa_18 %>%
-  filter(str_detect(cbsa_size, "large")) %>%
+target_cbsa <- metro.data::cbsa %>%
+  filter(str_detect(cbsa_size, "large|mid")) %>%
   # filter(cbsa_size != "micro") %>%
   pull(cbsa_code)
 
@@ -12,7 +12,7 @@ target_cbsa <- metro.data::cbsa_18 %>%
 # LOAD =================
 occ <- data.table::fread("../../_metro_data_warehouse/data_raw/Emsi/Stafiing_Patterns_MSA_NAICS3_SOC5_Sep282020.csv")
 occ_ind <- occ %>%
-  filter(MSAID %in% target_cbsa) %>%
+#  filter(MSAID %in% target_cbsa) %>%
   select(-IndustryName) %>%
   pivot_wider(names_from = "Industry", values_from = "2019 Jobs")
 
