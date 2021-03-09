@@ -2,16 +2,21 @@
 source("2_func.R")
 
 target_struggle <- target_struggle %>% 
-  mutate(fam_cat = ifelse(str_detect(cat, "child"), "families with kids", cat)) %>% 
+  mutate(fam_cat = ifelse(str_detect(cat, "child"), "families with kids", cat),
+         cbsa_size = fct_collapse(cbsa_size, `micropolitans and rural areas` = c("nonmetro", "micro")), 
+         cbsa_size = fct_relevel(cbsa_size, c("very large metros", "large metros", "midsized metros", "small metros", "micropolitans and rural areas"))) %>% 
   # remove college students
   filter(!(RELP == 20 & SCH %in% c(2,3)))
 
 target_wages_semp <- target_wages_semp %>% 
-  mutate(fam_cat = ifelse(str_detect(cat, "child"), "families with kids", cat)) %>% 
+  mutate(fam_cat = ifelse(str_detect(cat, "child"), "families with kids", cat), 
+         cbsa_size = fct_collapse(cbsa_size, `micropolitans and rural areas`  = c("nonmetro", "micro")), 
+         cbsa_size = fct_relevel(cbsa_size, c("very large metros", "large metros", "midsized metros", "small metros", "micropolitans and rural areas"))) %>% 
   # remove college students
-  filter(!(RELP == 20 & SCH %in% c(2,3)))
+  filter(!(RELP == 20 & SCH %in% c(2,3))) 
+ 
 
-# findings 1
+# findinfct_lump()
 target_struggle %>% 
   # filter(str_detect(cat, "child")) %>%
   mutate(n_child = as.numeric(str_sub(cat, 9, 10))) %>%
@@ -39,8 +44,8 @@ cbsa_data <- target_struggle %>%
   select(cbsa_code, cbsa_name, cbsa_size, cbsa_emp, pct_struggle = pct, n_struggle = n) %>%
   filter(cbsa_size != "micro")
 
-cbsa_data %>%
-  write.csv("result/cbsa_all_family.csv")
+# cbsa_data %>%
+#   write.csv("result/cbsa_all_family.csv")
 
 target_struggle %>%
   # filter(str_detect(cat, "child")) %>%
@@ -106,10 +111,10 @@ compare_lifted <- function(col){
               mutate(pct = n / sum(n)) %>% 
               mutate(lifted = "all households")) %>% 
     
-    ggplot(aes(x = lifted, y = pct, fill = reorder(!!col, pct)))+
+    ggplot(aes(x = lifted, y = pct, fill = !!col))+
     geom_col()+
     geom_text(aes(label = scales::percent(pct, accuracy = 1)), position = "stack", hjust = 1,check_overlap = T) +
-    scale_fill_brewer(name = "", palette = "Set3")+
+    scale_fill_manual(name = "", values = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f"))+
     coord_flip()+
     scale_y_continuous(labels = scales::percent)+
     labs(x = "", y = "")+

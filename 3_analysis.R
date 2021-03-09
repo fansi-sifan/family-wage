@@ -3,7 +3,15 @@
 source("2_func.R")
 load("result/final_naics3.rda")
 
+load("../metro-datasets/metro_monitor_2021/cbsa_metromonitor_2021.rda")
+
+target_cbsa <- cbsa_metromonitor_2021 %>% 
+  distinct(cbsa_code, metrosize) %>% 
+  left_join(metro.data::cbsa_18[c("cbsa_code", "cbsa_size")]) %>% 
+  view()
+  
 final_naics3 <- final_naics3 %>% 
+  filter(cbsa_code %in% target_cbsa$cbsa_code) %>% 
   filter(n_good_jobs > 0) %>% 
   mutate(sector = str_replace(sector, "Traded", "Tradable"))
 
@@ -31,8 +39,9 @@ naics_sc %>%
   view()
 
 # APPENDIX =====
-df <- get_cbsa_summary(target_wages_semp, struggle_alt) %T>%
-  write.csv("result/cbsa_wages19.csv") %>%
+df <- get_cbsa_summary(target_wages_semp, struggle_alt) %>% 
+  filter(cbsa_code %in% target_cbsa$cbsa_code)%T>%
+  write.csv("result/cbsa_wages_all.csv") %>%
   filter(str_detect(cbsa_size, "large"))
 
 final_naics3 %>%
@@ -41,12 +50,13 @@ final_naics3 %>%
          Jobs > 500) %>%
   mutate(pct_accessible = midskill + lowskill, 
          sector = ifelse(is.na(sector), "Government", sector)) %>%
-  select(cbsa_code, sector, `Industry Name`, n_good_jobs, contains("pct"), insurance_coverage) %>% 
+  select(cbsa_code, sector, `Industry Name`, n_good_jobs, contains("pct")) %>%
   write.csv("result/cbsa_naics3.csv")
 
 # chart: struggling share changes as wage increases -----
 chart1 <- target_wages_semp %>%
   filter(cbsa_code == "13820") %>%
+  # filter(cbsa_code == "41940") %>%
   select(pct_kids_fam, pct_all_fam, expected_wage) %>% 
   # write.csv("result/wage_test.csv")
   test_wage(0.5)
@@ -350,17 +360,16 @@ chart5 %>%
 
 # Export ===
 ggsave(chart1, filename = "result/chart1.png", width = 8, height = 3)
-ggsave(chart2, filename = "result/chart2.pdf", height = 3)
+ggsave(chart2, filename = "result/chart2.pdf", width = 12, height = 5)
 ggsave(chart3, filename = "result/chart3.png", width = 6, height = 3)
-ggsave(chart4, filename = "result/chart4.png", width = 12, height = 5)
+ggsave(chart4, filename = "result/chart4.svg", width = 12, height = 5)
 ggsave(chart5, filename = "result/chart5.png", width = 12, height = 5)
 
 tmap_save(map_struggle, "result/map1.png")
 tmap_save(map_delta, "result/map2.png")
 
 # media notes ---
-df %>% 
-  filter(cbsa_code == "13820")
+
 library(scales)
 
 msg <- function(target_cbsa){
@@ -377,10 +386,22 @@ msg <- function(target_cbsa){
         " per hour.")
 }
 
+df %>% 
+  mutate(msg = msg(cbsa_code)) %>% 
+  write.csv("test.csv")
+
 msg("13820")
 msg("41740")
 
-targets <- c("Akron", "Arlington", "Austin", "Birmingham", "Chicago", "Cleveland", "Columbia", "Columbus", "Durham", "Detroit", "Denver", "Fresno", "Indianapolis", "Kansas City", "Louisville", "Macon", "Memphis", "Milwaukee", "Minneapolis-St. Paul", "Montgomery", "Nashville", "Orlando", "Pittsburgh", "Portland", "Prairie View", "San Diego", "San Francisco", "San Mateo/Santa Clara", "Seattle", "Syracuse", "Tampa", "Union City", "Ville Platte", "Washington", "West Palm Beach", "Wichita")
+targets <- c("Akron", "Arlington", "Austin", "Birmingham", "Chicago",
+             "Cleveland", "Columbia", "Columbus", "Durham", "Detroit", 
+             "Denver", "Fresno", "Indianapolis", "Kansas City", 
+             "Louisville", "Macon", "Memphis", "Milwaukee", "Minneapolis-St. Paul",
+             "Montgomery", "Nashville", "Orlando", "Pittsburgh", "Portland", "Prairie View", 
+             "San Diego", "San Francisco", "San Mateo/Santa Clara", "Seattle", "Syracuse", 
+             "Tampa", "Union City", "Ville Platte", "Washington", "West Palm Beach", "Wichita", 
+             )
+
 
 find_code <- function(msa){
   metro.data::county_cbsa_st %>%

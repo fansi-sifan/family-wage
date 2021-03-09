@@ -18,7 +18,7 @@ get_cbsa_summary <- function(df, semp){
   
   # get overall struggling share and struggling family with kids
   target_struggle %>%
-    filter(str_detect(cat, "child")) %>%
+    # filter(str_detect(cat, "child")) %>%
     filter(!is.na(struggle_alt)) %>%
     group_by(cbsa_code, !!semp) %>%
     summarise(n = sum(weight)) %>%
@@ -34,16 +34,18 @@ get_cbsa_summary <- function(df, semp){
                 group_by(cbsa_code) %>%
                 mutate(
                   n_kids = sum(kids * weight, na.rm = T)/2 , # median
-                  n_all = sum(n_worker * (kids!=0) * weight, na.rm = T)/2 # median
+                  n_parents = sum(n_worker * (kids!=0) * weight, na.rm = T)/2, # median
+                  n_all = sum(n_worker * weight, na.rm = T)/2 # median
                 ) %>%
                 filter(n_all * n_kids != 0) %>%
-                group_by(cbsa_code, n_all, n_kids) %>%
+                group_by(cbsa_code, n_all, n_kids, n_parents) %>%
                 summarise(
                   kids = spatstat::weighted.quantile(expected_wage, kids * weight, probs = 0.4, na.rm = T),
-                  kids_fam = spatstat::weighted.quantile(expected_wage, kids_fam * weight,  probs = 0.4,na.rm = T),
-                  fam = spatstat::weighted.quantile(expected_wage, fam * weight,  probs = 0.4,na.rm = T)
+                  kids_fam = spatstat::weighted.quantile(expected_wage, kids_fam,  probs = 0.4,na.rm = T),
+                  fam = spatstat::weighted.quantile(expected_wage, fam,  probs = 0.4, na.rm = T)
                 )) %>%
-                mutate(pct_kids_gap = n_all / cbsa_emp)
+                mutate(pct_kids_gap = n_parents / cbsa_emp, 
+                       pct_all_gap = n_all / cbsa_emp)
   }
 
 # who are struggling families? --------
@@ -105,20 +107,21 @@ subplots <- function(df, col, semp, pal) {
                fill = reorder(!!col, pct))) +
     scale_fill_brewer(palette = pal, guide = F) +
     geom_col() +
-    geom_text() +
+    geom_text(vjust = -1) +
     labs(x = "", y = "") +
     scale_y_continuous(labels = scales::percent) +
     theme_classic() +
     theme(
-      axis.title.x = element_blank(),
-      axis.text.x = element_blank(),
-      axis.ticks.x = element_blank(),
-      axis.line.x = element_blank()
+      axis.title.y = element_blank(),
+      axis.text.y = element_blank(),
+      axis.ticks.y = element_blank(),
+      axis.line.y = element_blank()
     )+
-    coord_flip()
+    # coord_flip()+
+    NULL
 }
 
-# target_struggle %>%
+ # target_struggle %>%
 #   filter(cbsa_code == target_cbsa) %>%
 #   subplots(race_cat, struggle_alt, "Greens")
 
