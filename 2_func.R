@@ -1,6 +1,7 @@
 library(tidyverse)
 load("result/stco_struggle19.rda")
 load("result/target_wage.rda")
+
 # ANALYSIS ============
 find_earners <- function(df){
   df %>%

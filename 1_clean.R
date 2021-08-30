@@ -7,8 +7,8 @@ all_cbsa <- metro.data::cbsa_18 %>%
   select(cbsa_code) %>%
   pull()
 
-# match to livnig wage data ---------
-load("data-raw//county_fbc_data_2018.rda")
+# EPI livnig wage data ---------
+load("data-raw/county_fbc_data_2018.rda")
 
 cat_fam <- tibble::tribble(
   ~family, ~cat,
@@ -24,9 +24,9 @@ cat_fam <- tibble::tribble(
   "2p4c", "2 adult,4 child"
 )
 
-# PUMA ------------
+# PUMA xwalk to county ------------
 # GEOCORR 2018, weighted by 2010 household units
-final <- readRDS(file = "data-raw//acs2019final.rds")
+final <- readRDS(file = "data-raw/acs2019final.rds")
 
 puma_county <- metro.data::puma2county %>%
   mutate(stpuma_code = paste0(st_code, puma_code)) %>% 
@@ -65,6 +65,7 @@ save(target_struggle, file = "result/stco_struggle19.rda")
 
 # determine expected wage based on family types
 load("result/stco_struggle19.rda")
+
 get_wage <- function(df){
   df%>%
     group_by(cbsa_code) %>%
@@ -73,18 +74,7 @@ get_wage <- function(df){
       kids = as.numeric(str_sub(cat, 9, 9)),
       kids = ifelse(is.na(kids), 0, kids)
     ) %>%
-    # mutate(black_kids = ifelse(race_cat  == "Black", kids, 0),
-    #        latino_kids = ifelse(race_cat  == "Hispanic", kids, 0),
-    #        minority_kids = ifelse(race_cat %in% c("Black", "Hispanic"), kids, 0)) %>%
     mutate(
-      # black_kids_s = weight * black_kids / sum(weight * black_kids),
-      # pct_black = cumsum(black_kids_s),
-      # 
-      # latino_kids_s = weight * latino_kids / sum(weight * latino_kids),
-      # pct_latino = cumsum(latino_kids_s),
-      # 
-      # minority_kids_s = weight * minority_kids / sum(weight * minority_kids),
-      # pct_minority = cumsum(minority_kids_s),
       
       # all kids
       kid_s = weight * kids / sum(weight * kids),
