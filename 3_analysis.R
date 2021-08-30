@@ -3,8 +3,22 @@
 source("2_func.R")
 load("result/final_naics3.rda")
 
+<<<<<<< HEAD
 final_naics3 <- final_naics3 %>%
   filter(n_good_jobs > 0)
+=======
+load("../metro-datasets/metro_monitor_2021/cbsa_metromonitor_2021.rda")
+
+target_cbsa <- cbsa_metromonitor_2021 %>% 
+  distinct(cbsa_code, metrosize) %>% 
+  left_join(metro.data::cbsa_18[c("cbsa_code", "cbsa_size")]) %>% 
+  view()
+  
+final_naics3 <- final_naics3 %>% 
+  filter(cbsa_code %in% target_cbsa$cbsa_code) %>% 
+  filter(n_good_jobs > 0) %>% 
+  mutate(sector = str_replace(sector, "Traded", "Tradable"))
+>>>>>>> 054c51e408ae2118f7ec9b0ce8cbc9dc980a7d03
 
 # IN REPORT =====
 # number of kids struggling
@@ -30,11 +44,13 @@ naics_sc %>%
   view()
 
 # APPENDIX =====
-df <- get_cbsa_summary(target_wages_semp, struggle_alt) %T>%
-  write.csv("result/cbsa_wages19.csv") %>%
+df <- get_cbsa_summary(target_wages_semp, struggle_alt) %>% 
+  filter(cbsa_code %in% target_cbsa$cbsa_code)%T>%
+  write.csv("result/cbsa_wages_all.csv") %>%
   filter(str_detect(cbsa_size, "large"))
 
 final_naics3 %>%
+<<<<<<< HEAD
   group_by(cbsa_code) %>%
   filter(
     pct_good_jobs > median(pct_good_jobs, na.rm = T),
@@ -45,12 +61,25 @@ final_naics3 %>%
     sector = ifelse(is.na(sector), "Government", sector)
   ) %>%
   select(cbsa_code, sector, `Industry Name`, n_good_jobs, contains("pct"), insurance_coverage) %>%
+=======
+  group_by(cbsa_code) %>% 
+  filter(pct_good_jobs > median(pct_good_jobs, na.rm = T),
+         Jobs > 500) %>%
+  mutate(pct_accessible = midskill + lowskill, 
+         sector = ifelse(is.na(sector), "Government", sector)) %>%
+  select(cbsa_code, sector, `Industry Name`, n_good_jobs, contains("pct")) %>%
+>>>>>>> 054c51e408ae2118f7ec9b0ce8cbc9dc980a7d03
   write.csv("result/cbsa_naics3.csv")
 
 # chart: struggling share changes as wage increases -----
 chart1 <- target_wages_semp %>%
   filter(cbsa_code == "13820") %>%
+<<<<<<< HEAD
   select(pct_kids_fam, pct_all_fam, expected_wage) %>%
+=======
+  # filter(cbsa_code == "41940") %>%
+  select(pct_kids_fam, pct_all_fam, expected_wage) %>% 
+>>>>>>> 054c51e408ae2118f7ec9b0ce8cbc9dc980a7d03
   # write.csv("result/wage_test.csv")
   test_wage(0.5)
 
@@ -61,11 +90,13 @@ ggplotly(chart1) %>%
 
 # chart: struggling share by demography -----------
 chart2 <- target_struggle %>%
+  filter(str_detect(cat, "child")) %>%
   plot_struggle(struggle_alt)
 
 # map ===============
 # read in median earnings
 cbsa_median <- readxl::read_xlsx("data-raw/OES_Report.xlsx", skip = 5)
+cbsa_median <- readxl::read_xlsx("../../metro-self-sufficient/data/OES_Report.xlsx", skip = 5)
 
 cbsa_data <- cbsa_median %>%
   mutate(cbsa_code = str_sub(`Area Name`, -6, -2)) %>%
@@ -89,7 +120,11 @@ cbsa_data <- cbsa_median %>%
     delta_cat = cut(delta, c(-Inf, -6, -4, -2, 0, 2))
   )
 
+<<<<<<< HEAD
 chart5 <- cbsa_data %>%
+=======
+chart3 <- cbsa_data %>% 
+>>>>>>> 054c51e408ae2118f7ec9b0ce8cbc9dc980a7d03
   mutate(point_col = case_when(
     cbsa_code %in% c("47900", "42660", "25540", "44060", "31540", "40900") ~ "high",
     cbsa_code %in% c("46520", "41940", "33100", "41860", "19660", "42220", "37100") ~ "low",
@@ -140,7 +175,7 @@ chart5 <- cbsa_data %>%
   # geom_vline(xintercept = median(cbsa_data$kids), linetype = "dashed")+
   theme_light()
 
-chart5
+chart3
 
 # ggplotly(chart5)
 
@@ -200,6 +235,7 @@ final_sector <- final_naics3 %>%
   group_by(cbsa_code, sector) %>%
   summarise(pct_good_jobs = sum(n_good_jobs) / sum(n_good_jobs / pct_good_jobs))
 
+<<<<<<< HEAD
 chart3 <- final_sector %>%
   mutate(type = "sector") %>%
   bind_rows(final_sector %>%
@@ -209,6 +245,14 @@ chart3 <- final_sector %>%
         "Traded", "Local"
       )
     )) %>%
+=======
+chart4 <- final_sector %>%
+  mutate(type = "sector") %>% 
+  bind_rows(final_sector %>%
+              mutate(type = "traded", 
+                     sector = ifelse(str_detect(sector, "Tradable"), 
+                                     "Tradable", "Local"))) %>% 
+>>>>>>> 054c51e408ae2118f7ec9b0ce8cbc9dc980a7d03
   ggplot(aes(
     x = fct_reorder(sector, pct_good_jobs, .fun = "median"),
     y = pct_good_jobs,
@@ -239,6 +283,7 @@ chart3 <- final_sector %>%
   ) +
   NULL
 
+chart4
 
 # industries ranked by % secure jobs
 final_naics3 %>%
@@ -271,10 +316,18 @@ plot_industry_bar <- function(df) {
     pull(cbsa_name)
 
   df %>%
+<<<<<<< HEAD
     mutate(pct_inaccessible = pct_good_jobs - pct_accessible) %>%
     pivot_longer(contains("accessible")) %>%
     ggplot(aes(
       x = reorder(Industry, value),
+=======
+    mutate(pct_inaccessible = pct_good_jobs - pct_accessible, 
+           rank = dense_rank(pct_accessible)) %>% 
+    pivot_longer(contains("accessible")) %>% 
+    ggplot(aes(
+      x = reorder(Industry,rank),
+>>>>>>> 054c51e408ae2118f7ec9b0ce8cbc9dc980a7d03
       y = value,
       alpha = factor(name, levels = c("pct_inaccessible", "pct_accessible")),
       fill = sector,
@@ -282,9 +335,14 @@ plot_industry_bar <- function(df) {
     )) +
     geom_col() +
     scale_alpha_discrete("education requirements",
+<<<<<<< HEAD
       # values = c(0.5,1),
       label = c("BA or higher", "All others")
     ) +
+=======
+                         # values = c(0.5,1),
+                         label = c("Four-year college degree or higher", "Less than four-year college degree"))+
+>>>>>>> 054c51e408ae2118f7ec9b0ce8cbc9dc980a7d03
     scale_fill_manual("sector",
       values = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f")
     ) +
@@ -352,22 +410,87 @@ modified_ind <- final_naics3 %>%
   left_join(shorten) %>%
   mutate(Industry = ifelse(is.na(Industry), `Industry Name`, Industry))
 
+<<<<<<< HEAD
 chart4 <- modified_ind %>%
   plot_industry_bar() +
+=======
+chart5 <- modified_ind %>% 
+  plot_industry_bar()+
+>>>>>>> 054c51e408ae2118f7ec9b0ce8cbc9dc980a7d03
   # theme(axis.ticks.y = element_blank(),
   #       axis.text.y = element_blank())+
   NULL
 
+<<<<<<< HEAD
 chart4 %>%
   plotly::ggplotly(tooltip = c("sector", "value")) %>%
+=======
+library(plotly)
+
+chart5 %>%
+  ggplotly(tooltip = c("sector", "value")) %>% 
+>>>>>>> 054c51e408ae2118f7ec9b0ce8cbc9dc980a7d03
   layout(showlegend = F)
 
 # Export ===
 ggsave(chart1, filename = "result/chart1.png", width = 8, height = 3)
-ggsave(chart2, filename = "result/chart2.pdf", height = 3)
-ggsave(chart3, filename = "result/chart3.png", height = 5)
-ggsave(chart4, filename = "result/chart4.pdf", width = 12, height = 5)
-ggsave(chart5, filename = "result/chart5.pdf", width = 6, height = 3)
+ggsave(chart2, filename = "result/chart2.pdf", width = 12, height = 5)
+ggsave(chart3, filename = "result/chart3.png", width = 6, height = 3)
+ggsave(chart4, filename = "result/chart4.svg", width = 12, height = 5)
+ggsave(chart5, filename = "result/chart5.png", width = 12, height = 5)
 
 tmap_save(map_struggle, "result/map1.png")
 tmap_save(map_delta, "result/map2.png")
+
+# media notes ---
+
+library(scales)
+
+msg <- function(target_cbsa){
+  data <- df %>% filter(cbsa_code == target_cbsa)
+  str_c(percent(data$pct_struggle), 
+        " of families with children in the ", 
+        str_extract(data$cbsa_name,"[^-|,|\\/]+"), 
+        " metro area do not earn enough high wages to make ends meet. To move half of these struggling families into self-sufficiency (", 
+        number(data$n_struggle/2,big.mark = ","),
+        " families), the region needs ",
+        number(data$n_all, big.mark = ","),
+        " more jobs that pay a “family-sustaining” wage of ", 
+        dollar(data$kids_fam), 
+        " per hour.")
+}
+
+df %>% 
+  mutate(msg = msg(cbsa_code)) %>% 
+  write.csv("test.csv")
+
+msg("13820")
+msg("41740")
+
+targets <- c("Akron", "Arlington", "Austin", "Birmingham", "Chicago",
+             "Cleveland", "Columbia", "Columbus", "Durham", "Detroit", 
+             "Denver", "Fresno", "Indianapolis", "Kansas City", 
+             "Louisville", "Macon", "Memphis", "Milwaukee", "Minneapolis-St. Paul",
+             "Montgomery", "Nashville", "Orlando", "Pittsburgh", "Portland", "Prairie View", 
+             "San Diego", "San Francisco", "San Mateo/Santa Clara", "Seattle", "Syracuse", 
+             "Tampa", "Union City", "Ville Platte", "Washington", "West Palm Beach", "Wichita", 
+             )
+
+
+find_code <- function(msa){
+  metro.data::county_cbsa_st %>%
+    filter(str_detect(cbsa_size, "large")) %>% 
+    dplyr::filter(grepl(!!msa,cbsa_name,ignore.case = T)) %>%
+    dplyr::select(cbsa_code, cbsa_name) %>%
+    unique()
+}
+
+media_msa <- targets %>% 
+  map_dfr(find_code) %>% 
+  pull(cbsa_code) %>% 
+  map_chr(msg)
+
+
+fileConn <- file("media_msg.txt")
+writeLines(media_msa, fileConn)
+close(fileConn)
