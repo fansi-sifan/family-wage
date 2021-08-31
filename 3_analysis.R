@@ -2,11 +2,6 @@
 # LOAD ========
 source("2_func.R")
 load("result/final_naics3.rda")
-
-<<<<<<< HEAD
-final_naics3 <- final_naics3 %>%
-  filter(n_good_jobs > 0)
-=======
 load("../metro-datasets/metro_monitor_2021/cbsa_metromonitor_2021.rda")
 
 target_cbsa <- cbsa_metromonitor_2021 %>% 
@@ -18,7 +13,7 @@ final_naics3 <- final_naics3 %>%
   filter(cbsa_code %in% target_cbsa$cbsa_code) %>% 
   filter(n_good_jobs > 0) %>% 
   mutate(sector = str_replace(sector, "Traded", "Tradable"))
->>>>>>> 054c51e408ae2118f7ec9b0ce8cbc9dc980a7d03
+
 
 # IN REPORT =====
 # number of kids struggling
